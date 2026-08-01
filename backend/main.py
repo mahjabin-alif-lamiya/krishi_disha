@@ -50,3 +50,4 @@ def predict(data: CropInput):
         "recommended_crop": crop,
         "confidence": confidence
     }
+    
