@@ -1,0 +1,46 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { NextResponse } from "next/server";
+
+// Gemini AI চালু করা (.env.local থেকে key নিয়ে)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// AI-কে কীভাবে আচরণ করতে হবে তার নির্দেশনা
+const systemInstruction = `
+You are "KrishiDisha", an agriculture guidance AI built for farmers in Bangladesh.
+The user (a farmer) will ask about crops, farming, soil, weather, pests, or diseases.
+
+Rules:
+- IMPORTANT: Detect the language the user wrote in. Whether they write in Bengali, English, or Banglish (Bengali written using English letters), you must ALWAYS reply in simple Bengali.
+- Keep answers short, practical, and easy so an ordinary farmer can understand.
+- Give real, useful farming advice.
+- If a question is not about agriculture, politely guide them back to farming topics in Bengali.
+`;
+
+export async function POST(request) {
+  try {
+    const { message } = await request.json();
+
+    if (!message) {
+      return NextResponse.json(
+        { reply: "অনুগ্রহ করে আপনার প্রশ্ন লিখুন।" },
+        { status: 400 }
+      );
+    }
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-flash-latest",
+      systemInstruction: systemInstruction,
+    });
+
+    const result = await model.generateContent(message);
+    const reply = result.response.text();
+
+    return NextResponse.json({text: reply });
+  } catch (error) {
+    console.error("Error:", error);
+    return NextResponse.json(
+      { reply: "দুঃখিত, একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।" },
+      { status: 500 }
+    );
+  }
+}
